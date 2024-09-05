@@ -18,12 +18,12 @@ def generate_n_by_x_problems(n, x, count, direction=True):
 
 
 if __name__ == "__main__":
-    for x in range(1, n_digits+1):
-        problems = generate_n_by_x_problems(n_digits, x, amount)
-        f = open(f"{n_digits}_"f"{x}_digit_problems.txt", "w")
+    for h in range(1, n_digits+1):
+        problems = generate_n_by_x_problems(n_digits, h, amount)
+        f = open(f"{n_digits}_by_{h}_problems.txt", "w")
         f.write("\n".join(problems))
-        problems = generate_n_by_x_problems(n_digits, x, amount, False)
-        f = open(f"{x}_{n_digits}_digit_problems.txt", "w")
+        problems = generate_n_by_x_problems(n_digits, h, amount, False)
+        f = open(f"{h}_by_{n_digits}_problems.txt", "w")
         f.write("\n".join(problems))
 
    
