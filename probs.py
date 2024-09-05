@@ -36,3 +36,6 @@ if __name__ == "__main__":
             problems = generate_n_by_x_problems(k, h, amount, False)
             with open(f"{n_dig_folder}/{h}_by_{k}_problems.txt", "w") as g:
                 g.write("\n".join(problems))
+
+
+   
