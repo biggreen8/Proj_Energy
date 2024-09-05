@@ -1,12 +1,13 @@
 import tqdm
 import torch
 import pickle
+import numpy as np
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from probs import n_digits
 
 # first, create an access token for Gemma and then replace the blank inside the quotations in the line below.  Then uncomment the line below
-access_token = "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"
+# access_token = "blank"
 
 tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it", token=access_token)
 model = AutoModelForCausalLM.from_pretrained(
@@ -45,29 +46,37 @@ class Toks(Dataset):
 
 
 for i in range(1,n_digits+1):
-    examples = open(f"{n_digits}_{i}_digit_problems.txt", "r").readlines()
-    examples1 = open(f"{i}_{n_digits}_digit_problems.txt", "r").readlines()
+    examples = open(f"{n_digits}_by_{i}_problems.txt", "r").readlines()
+    examples1 = open(f"{i}_by_{n_digits}_problems.txt", "r").readlines()
+
     few_shot_examples = "100 + 200 = 300\n520 + 890 = 1410\n"
+
     a = [few_shot_examples + v.strip() + " " for v in examples]
     toked = tokenizer.batch_encode_plus(a, return_tensors="pt", padding=True)
-    b = [few_shot_examples + v.strip() + " " for v in examples1]
+
+    b = [few_shot_examples + s.strip() + " " for s in examples1]
     toked1 = tokenizer.batch_encode_plus(b, return_tensors="pt", padding=True)
 
 
     dl = DataLoader(Toks(toked), batch_size=32)
     dl1 = DataLoader(Toks(toked1), batch_size=32)
+
     texts = []
-    for x, y in tqdm.tqdm(dl):
-        x = x.to(device)
-        y = y.to(device)
-        outputs = model.generate(input_ids=x, attention_mask=y, max_new_tokens=32)
-        texts.append(tokenizer.batch_decode(outputs))
+    texts1 = []
 
-    for x, y in tqdm.tqdm(dl1):
-        x = x.to(device)
-        y = y.to(device)
-        outputs = model.generate(input_ids=x, attention_mask=y, max_new_tokens=32)
-        texts.append(tokenizer.batch_decode(outputs))
+    for u in np.arange(0, 2, 0.1):
+        for x, y in tqdm.tqdm(dl):
+            x = x.to(device)
+            y = y.to(device)
+            outputs = model.generate(input_ids=x, attention_mask=y, max_new_tokens=32, temperature=u)
+            texts.append(tokenizer.batch_decode(outputs))
 
-    pickle.dump(texts, open(f"{n_digits}_{i}_digit_results.pkl", "wb"))
-    pickle.dump(texts, open(f"{i}_{n_digits}_digit_results.pkl", "wb"))
+    for t in np.arange(0, 2, 0.1):
+        for f, g in tqdm.tqdm(dl1):
+            f = f.to(device)
+            g = g.to(device)
+            outputs1 = model.generate(input_ids=f, attention_mask=g, max_new_tokens=32, temperature=t)
+            texts1.append(tokenizer.batch_decode(outputs1))
+
+    pickle.dump(texts, open(f"{n_digits}_by_{i}_at_{u}_results.pkl", "wb"))
+    pickle.dump(texts1, open(f"{i}_by_{n_digits}_at_{t}_results.pkl", "wb"))
