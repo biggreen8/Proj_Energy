@@ -50,10 +50,11 @@ for i in range(1,n_digits+1):
     for j in range(1, i+1):
         # Create separate folders for "n_digits by i" and "i by n_digits"
         n_folder= f"{i}_results"
-        n_by_i= f"{i}_by_{j}_results"
-        i_by_n = f"{j}_by_{i}_results"
+        n_by_i = f"{n_folder}/{i}_by_{j}_results"  # Sub-folder for "n_digits by i"
+        i_by_n = f"{n_folder}/{j}_by_{i}_results"  # Sub-folder for "i by n_digits"
         
         # Create the directories if they don't exist
+        os.makedirs(n_folder, exist_ok=True)
         os.makedirs(n_by_i, exist_ok=True)
         os.makedirs(i_by_n, exist_ok=True)
         
@@ -82,18 +83,18 @@ for i in range(1,n_digits+1):
                 texts.append(tokenizer.batch_decode(outputs))
 
             # Save the results to a .pkl file inside the "n_digits by i" folder for each 'u'
-            with open(f"{n_folder}/{n_by_i}/{i}_by_{j}_at_{u:.1f}_results.pkl", "wb") as f:
+            with open(f"{n_by_i}/{i}_by_{j}_at_{u:.1f}_results.pkl", "wb") as f:
                 pickle.dump(texts, f)
 
         # Loop over values of 't' for temperature settings
         for t in np.arange(0, 2.1, 0.1):  # 2.1 to include the value 2.0
             texts1 = []  # Reset texts1 for each 't'
-            for f, g in tqdm.tqdm(dl1, desc=f"Processing t={t:.1f}"):
-                f = f.to(device)
-                g = g.to(device)
-                outputs1 = model.generate(input_ids=f, attention_mask=g, max_new_tokens=32, temperature=t)
+            for d, e in tqdm.tqdm(dl1, desc=f"Processing t={t:.1f}"):
+                d = d.to(device)
+                e = e.to(device)
+                outputs1 = model.generate(input_ids=d, attention_mask=e, max_new_tokens=32, temperature=t)
                 texts1.append(tokenizer.batch_decode(outputs1))
 
             # Save the results to a .pkl file inside the "i by n_digits" folder for each 't'
-            with open(f"{n_folder}/{i_by_n}/{j}_by_{i}_at_{t:.1f}_results.pkl", "wb") as f:
-                pickle.dump(texts1, f)
+            with open(f"{i_by_n}/{j}_by_{i}_at_{t:.1f}_results.pkl", "wb") as g:
+                pickle.dump(texts1, g)
