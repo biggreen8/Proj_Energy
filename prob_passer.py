@@ -2,12 +2,13 @@ import tqdm
 import torch
 import pickle
 import numpy as np
+import os
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from probs import n_digits
 
 # first, create an access token for Gemma and then replace the blank inside the quotations in the line below.  Then uncomment the line below
-# access_token = "blank"
+access_token = "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"
 
 tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it", token=access_token)
 model = AutoModelForCausalLM.from_pretrained(
@@ -46,6 +47,14 @@ class Toks(Dataset):
 
 
 for i in range(1,n_digits+1):
+    # Create separate folders for "n_digits by i" and "i by n_digits"
+    n_by_i= f"{n_digits}_by_{i}_results"
+    i_by_n = f"{i}_by_{n_digits}_results"
+    
+    # Create the directories if they don't exist
+    os.makedirs(n_by_i, exist_ok=True)
+    os.makedirs(i_by_n, exist_ok=True)
+    
     examples = open(f"{n_digits}_by_{i}_problems.txt", "r").readlines()
     examples1 = open(f"{i}_by_{n_digits}_problems.txt", "r").readlines()
 
@@ -61,22 +70,28 @@ for i in range(1,n_digits+1):
     dl = DataLoader(Toks(toked), batch_size=32)
     dl1 = DataLoader(Toks(toked1), batch_size=32)
 
-    texts = []
-    texts1 = []
-
-    for u in np.arange(0, 2, 0.1):
-        for x, y in tqdm.tqdm(dl):
+    # Loop over values of 'u' for temperature settings
+    for u in np.arange(0, 2.1, 0.1):  # 2.1 to include the value 2.0
+        texts = []  # Reset texts for each 'u'
+        for x, y in tqdm.tqdm(dl, desc=f"Processing u={u:.1f}"):
             x = x.to(device)
             y = y.to(device)
             outputs = model.generate(input_ids=x, attention_mask=y, max_new_tokens=32, temperature=u)
             texts.append(tokenizer.batch_decode(outputs))
 
-    for t in np.arange(0, 2, 0.1):
-        for f, g in tqdm.tqdm(dl1):
+        # Save the results to a .pkl file inside the "n_digits by i" folder for each 'u'
+        with open(f"{n_by_i}/{n_digits}_by_{i}_at_{u:.1f}_results.pkl", "wb") as f:
+            pickle.dump(texts, f)
+
+    # Loop over values of 't' for temperature settings
+    for t in np.arange(0, 2.1, 0.1):  # 2.1 to include the value 2.0
+        texts1 = []  # Reset texts1 for each 't'
+        for f, g in tqdm.tqdm(dl1, desc=f"Processing t={t:.1f}"):
             f = f.to(device)
             g = g.to(device)
             outputs1 = model.generate(input_ids=f, attention_mask=g, max_new_tokens=32, temperature=t)
             texts1.append(tokenizer.batch_decode(outputs1))
 
-    pickle.dump(texts, open(f"{n_digits}_by_{i}_at_{u}_results.pkl", "wb"))
-    pickle.dump(texts1, open(f"{i}_by_{n_digits}_at_{t}_results.pkl", "wb"))
+        # Save the results to a .pkl file inside the "i by n_digits" folder for each 't'
+        with open(f"{i_by_n}/{i}_by_{n_digits}_at_{t:.1f}_results.pkl", "wb") as f:
+            pickle.dump(texts1, f)
