@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from probs import n_digits
 
 # first, create an access token for Gemma and then replace the blank inside the quotations in the line below.  Then uncomment the line below
-access_token = "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"
+access_token = "blank"
 
 tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it", token=access_token)
 model = AutoModelForCausalLM.from_pretrained(
