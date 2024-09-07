@@ -18,8 +18,6 @@ model = AutoModelForCausalLM.from_pretrained(
     token=access_token
 )
 
-import os
-
 # Detect the device
 if torch.backends.mps.is_available():
     device = torch.device("mps")  # Apple M1/M2 GPU
@@ -61,8 +59,10 @@ for i in range(1,n_digits+1):
         examples = open(f"{i}_problems/{i}_by_{j}_problems.txt", "r").readlines()
         examples1 = open(f"{i}_problems/{j}_by_{i}_problems.txt", "r").readlines()
 
+        # Create example outputs for the LLM to follow
         few_shot_examples = "100 + 200 = 300\n520 + 890 = 1410\n"
 
+        # Pass the generated problems to the LLM
         a = [few_shot_examples + v.strip() + " " for v in examples]
         toked = tokenizer.batch_encode_plus(a, return_tensors="pt", padding=True)
 
@@ -74,8 +74,8 @@ for i in range(1,n_digits+1):
         dl1 = DataLoader(Toks(toked1), batch_size=32)
 
         # Loop over values of 'u' for temperature settings
-        for u in np.arange(0, 2.1, 0.1):  # 2.1 to include the value 2.0
-            texts = []  # Reset texts for each 'u'
+        for u in np.arange(0, 2.1, 0.1):
+            texts = []
             for x, y in tqdm.tqdm(dl, desc=f"Processing u={u:.1f}"):
                 x = x.to(device)
                 y = y.to(device)
@@ -87,8 +87,8 @@ for i in range(1,n_digits+1):
                 pickle.dump(texts, f)
 
         # Loop over values of 't' for temperature settings
-        for t in np.arange(0, 2.1, 0.1):  # 2.1 to include the value 2.0
-            texts1 = []  # Reset texts1 for each 't'
+        for t in np.arange(0, 2.1, 0.1):
+            texts1 = []
             for d, e in tqdm.tqdm(dl1, desc=f"Processing t={t:.1f}"):
                 d = d.to(device)
                 e = e.to(device)
